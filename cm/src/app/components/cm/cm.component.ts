@@ -23,29 +23,39 @@ import { Subject } from 'rxjs';
 export class CmComponent implements MatFormFieldControl<string>,
   ControlValueAccessor, AfterViewInit, OnDestroy {
 
+  // Used when generating the element ID for this control.
   static nextId = 0;
 
-  @ViewChild('host', { static: false }) host?: ElementRef;
+  // The editor (roughly the equivalent of the CodeMirror class from 5.x).
   cm: EditorView = new EditorView();
+
+  // The underlying native element of this component's view.
   nativeElement: any;
+
 
   constructor(
     @Optional() @Self() public ngControl: NgControl,
     private readonly fm: FocusMonitor,
     private readonly er: ElementRef,
   ) {
+    // The codemirror View will be attached to the underlying native element.
     this.nativeElement = er.nativeElement;
 
     // The NgControl for this control.
     if (this.ngControl) {
-      // Setting the value accessor directly (instead of using
-      // the providers) to avoid running into a circular import.
+      // Setting the value accessor directly to avoid a circular import.
       this.ngControl.valueAccessor = this;
     }
   }
 
 
-  // Component lifecycle hooks.
+  // Implement lifecycle hooks.
+  // ==========================
+
+  /**
+   * Invoked immediately after Angular has completed initialization of
+   * this component's view.
+   */
   ngAfterViewInit(): void {
     let darkTheme = EditorView.theme({}, { dark: false });
     this.cm = new EditorView({
@@ -58,12 +68,23 @@ export class CmComponent implements MatFormFieldControl<string>,
     });
   }
 
+  /**
+   * Invoked immediately before this component is destroyed.
+   */
   ngOnDestroy() {
     this.stateChanges.complete();
   }
 
-  // implement ControlValueAccessor
 
+  // Implement ControlValueAccessor.
+  // ===============================
+
+  /**
+   * Writes a new value to the element. This method is called by the forms API
+   * to write to the view when programmatic changes from model to view are
+   * requested.
+   * @param value The new value for the element.
+   */
   writeValue(obj: any): void {
     this.value = obj;
   }
@@ -77,7 +98,9 @@ export class CmComponent implements MatFormFieldControl<string>,
     // throw new Error('Method not implemented.');
   }
 
-  // implement MatFormFieldControl<string>
+
+  // Implement MatFormFieldControl<string>
+  // =====================================
 
   @Input()
   get value(): string | null {
@@ -98,12 +121,10 @@ export class CmComponent implements MatFormFieldControl<string>,
     this.stateChanges.next();
   }
   _value: string | null = "";
-
-
+  
   stateChanges: Subject<void> = new Subject<void>();
   id: string = `codemirror-${CmComponent.nextId++}`;
   placeholder: string = "";
-  // ngControl: NgControl | null;
   focused: boolean = false;
   empty: boolean = false;
   shouldLabelFloat: boolean = false;
@@ -113,6 +134,7 @@ export class CmComponent implements MatFormFieldControl<string>,
   controlType?: string | undefined;
   autofilled?: boolean | undefined;
   userAriaDescribedBy?: string | undefined;
+  // ngControl: NgControl | null;
 
   // Used by the <mat-form-field> to specify the IDs that should be used for
   // the aria-describedby attribute.
