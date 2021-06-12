@@ -30,5 +30,4 @@ export class AppComponent {
       editor: [this.doc]
     });
   }
-
 }
