@@ -17,8 +17,6 @@ export class CmComponent implements MatFormFieldControl<string>,
   ControlValueAccessor, AfterViewInit {
   @ViewChild('host', { static: false }) host?: ElementRef;
 
-  @Input() doc: string = "";
-
   constructor(@Optional() @Self() public ngControl: NgControl) {
     // The NgControl for this control.
     if (this.ngControl) {
@@ -38,7 +36,6 @@ export class CmComponent implements MatFormFieldControl<string>,
         state: EditorState.create(
           {
             extensions: [basicSetup, json(), darkTheme],
-            doc: this.doc,
           }),
       });
 
@@ -47,6 +44,7 @@ export class CmComponent implements MatFormFieldControl<string>,
   }
 
   // implement ControlValueAccessor
+  
   writeValue(obj: any): void {
     throw new Error('Method not implemented.');
   }
