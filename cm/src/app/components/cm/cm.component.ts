@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, ViewChild } from '@angular/core';
 import { basicSetup, EditorState } from "@codemirror/basic-setup";
 import { json } from "@codemirror/lang-json";
 import { EditorView } from "@codemirror/view";
@@ -9,27 +9,24 @@ import { EditorView } from "@codemirror/view";
   templateUrl: './cm.component.html',
   styleUrls: ['./cm.component.scss']
 })
-export class CmComponent implements OnInit, AfterViewInit {
+export class CmComponent implements AfterViewInit {
   @ViewChild('host', { static: false }) host?: ElementRef;
 
- 
   private jsonDocument: string =
-  JSON.stringify({
-    'checked': false,
-    'dimensions': {
-      'width': 5,
-      'height': 10,
-    },
-    'id': 1,
-    'name': 'A green door',
-    'price': 12.5,
-    'tags': [
-      'home',
-      'green',
-    ],
-  }, null, 4);
-
-
+    JSON.stringify({
+      'checked': false,
+      'dimensions': {
+        'width': 5,
+        'height': 10,
+      },
+      'id': 1,
+      'name': 'A green door',
+      'price': 12.5,
+      'tags': [
+        'home',
+        'green',
+      ],
+    }, null, 4);
 
   constructor() { }
 
@@ -49,9 +46,4 @@ export class CmComponent implements OnInit, AfterViewInit {
       console.log(view);
     }
   }
-
-  ngOnInit(): void {
-
-  }
-
 }
