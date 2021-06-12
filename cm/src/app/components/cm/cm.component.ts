@@ -66,6 +66,7 @@ export class CmComponent implements MatFormFieldControl<string>,
           extensions: [basicSetup, json(), darkTheme],
         }),
     });
+    console.log(this.cm);
   }
 
   /**
@@ -107,7 +108,6 @@ export class CmComponent implements MatFormFieldControl<string>,
     return this.cm.state.doc.toString();
   }
   set value(value: string | null) {
-    // create the transaction
     const transaction = this.cm.state.update({
       changes: {
         from: 0,
@@ -121,18 +121,109 @@ export class CmComponent implements MatFormFieldControl<string>,
     this.stateChanges.next();
   }
   _value: string | null = "";
-  
+
   stateChanges: Subject<void> = new Subject<void>();
   id: string = `codemirror-${CmComponent.nextId++}`;
-  placeholder: string = "";
-  focused: boolean = false;
-  empty: boolean = false;
-  shouldLabelFloat: boolean = false;
-  required: boolean = false;
-  disabled: boolean = false;
-  errorState: boolean = false;
-  controlType?: string | undefined;
-  autofilled?: boolean | undefined;
+  
+  /** The placeholder for this control. */
+  @Input()
+  get placeholder(): string {
+    return this._placeholder;
+  }
+  set placeholder(value: string) {
+    this._placeholder = value;
+    this.stateChanges.next();
+  }
+  private _placeholder: string = '';
+
+  /** Whether the control is focused. */
+  @Input()
+  get focused(): boolean {
+    return this._focused;
+  }
+  set focused(value: boolean) {
+    this._focused = coerceBooleanProperty(value);
+    this.stateChanges.next();
+  }
+  private _focused: boolean = false;
+
+  /** Whether the control is empty. */
+  @Input()
+  get empty(): boolean {
+    return this._empty;
+  }
+  set empty(value: boolean) {
+    this._empty = coerceBooleanProperty(value);
+    this.stateChanges.next();
+  }
+  private _empty: boolean = false;
+
+  /** Whether the `MatFormField` label should try to float. */
+  @Input()
+  get shouldLabelFloat(): boolean {
+    return this._required;
+  }
+  set shouldLabelFloat(value: boolean) {
+    this._required = coerceBooleanProperty(value);
+    this.stateChanges.next();
+  }
+  private _shouldLabelFloat = false;
+
+  /** Whether the control is required. */
+  @Input()
+  get required(): boolean {
+    return this._required;
+  }
+  set required(value: boolean) {
+    this._required = coerceBooleanProperty(value);
+    this.stateChanges.next();
+  }
+  private _required = false;
+
+  /** Whether the control is disabled. */
+  @Input()
+  get disabled(): boolean {
+    return this._disabled;
+  }
+  set disabled(value: boolean) {
+    this._disabled = coerceBooleanProperty(value);
+    // TODO: disable codemirror view
+    this.stateChanges.next();
+  }
+  private _disabled = false;
+
+
+  /** Whether the control is in an error state. */
+  get errorState(): boolean {
+    return this.ngControl.errors !== null;
+  }
+  set errorState(value: boolean) {
+    // this._errorState = coerceBooleanProperty(value);
+    this._errorState = this.ngControl.errors !== null;
+    this.stateChanges.next();
+  }
+  private _errorState: boolean = false;
+
+  /**
+   * An optional name for the control type that can be used to distinguish
+   * `mat-form-field` elements based on their control type. The form field will
+   * add a class, `mat-form-field-type-{{controlType}}` to its root element.
+   */
+  controlType: string = 'codemirror';
+
+  /**
+   * Whether the input is currently in an autofilled state. If property is not
+   * present on the control it is assumed to be false.
+   */
+  get autofilled(): boolean {
+    return this._autofilled;
+  }
+  set autofilled(value: boolean) {
+    this._autofilled = coerceBooleanProperty(value);
+    this.stateChanges.next();
+  }
+  private _autofilled: boolean = false;
+
   userAriaDescribedBy?: string | undefined;
   // ngControl: NgControl | null;
 
@@ -143,7 +234,16 @@ export class CmComponent implements MatFormFieldControl<string>,
     this.describedBy = ids.join(' ');
   }
 
+  /**
+  * This method will be called when the form field is clicked on.
+  * It allows the component to hook in and handle that click however it wants. 
+  * @param _event 
+  */
   onContainerClick(event: MouseEvent): void {
     throw new Error('Method not implemented.');
   }
 }
+function coerceBooleanProperty(value: boolean): boolean {
+  throw new Error('Function not implemented.');
+}
+
