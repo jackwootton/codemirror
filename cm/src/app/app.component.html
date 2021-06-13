@@ -1,9 +1,18 @@
 <header></header>
 
-<main [formGroup]="form">
+<main [formGroup]="form" fxLayout="column" fxLayoutGap="16px">
+
   <mat-form-field fxFlex>
-    <app-cm autofocus formControlName="editor" placeholder="placeholder" matInput></app-cm>
+    <app-cm autofocus formControlName="editor" matInput></app-cm>
   </mat-form-field>
+
+  <div fxFlex fxLayout="row" fxLayoutGap="16px">
+    <button fxFlex="120px" mat-button color="primary" (click)="enable()">enable</button>
+    <button fxFlex="120px" mat-button color="primary" (click)="disable()">disable</button>
+  </div>
+
 </main>
+
+
 
 <footer></footer>

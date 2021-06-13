@@ -1,11 +1,11 @@
 import { FocusMonitor, FocusOrigin } from '@angular/cdk/a11y';
 import { coerceBooleanProperty } from '@angular/cdk/coercion';
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, forwardRef, HostBinding, Input, OnDestroy, Optional, Self } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, forwardRef, HostBinding, Input, OnDestroy, Optional, Self, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NgControl } from '@angular/forms';
 import { MatFormFieldControl } from '@angular/material/form-field';
 import { basicSetup, EditorState } from "@codemirror/basic-setup";
 import { json } from "@codemirror/lang-json";
-import { Extension, Transaction } from "@codemirror/state";
+import { Extension, Transaction, Compartment } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { Subject } from 'rxjs';
 
@@ -26,6 +26,9 @@ import { Subject } from 'rxjs';
 export class CmComponent implements MatFormFieldControl<string>,
   ControlValueAccessor, AfterViewInit, OnDestroy {
 
+  // The element to append the editor to upon creation.
+  @ViewChild('host', { static: false }) host?: ElementRef;
+
   // Used when generating the element ID for this control.
   static nextId = 0;
 
@@ -34,6 +37,8 @@ export class CmComponent implements MatFormFieldControl<string>,
 
   // The underlying native element of this component's view.
   nativeElement: any;
+
+  private cmEnabled = new Compartment;
 
 
   constructor(
@@ -65,8 +70,8 @@ export class CmComponent implements MatFormFieldControl<string>,
   }
 
 
-  // Implement lifecycle hooks.
-  // ==========================
+  // Implement lifecycle hooks (https://angular.io/guide/lifecycle-hooks).
+  // =====================================================================
 
   /**
    * Invoked immediately after Angular has completed initialization of
@@ -74,12 +79,13 @@ export class CmComponent implements MatFormFieldControl<string>,
    */
   ngAfterViewInit(): void {
     const darkTheme = EditorView.theme({}, { dark: false });
-    const editable: Extension = EditorView.editable.of(!this.disabled);
+    const editable: Extension = this.cmEnabled.of(EditorView.editable.of(!this.disabled));
+
     // const contentEditable: Extension = EditorView.contentAttributes.of({ contenteditable: String(isEditable) });
     console.log(editable);
 
     this.cm = new EditorView({
-      parent: this.er.nativeElement,
+      parent: this.host?.nativeElement,
       state: EditorState.create(
         {
           doc: this._value || "",
@@ -103,8 +109,8 @@ export class CmComponent implements MatFormFieldControl<string>,
   }
 
 
-  // Implement ControlValueAccessor.
-  // ===============================
+  // Implement ControlValueAccessor (https://angular.io/api/forms/ControlValueAccessor).
+  // ===================================================================================
 
   /**
    * Writes a new value to the element. This method is called by the forms API
@@ -166,8 +172,8 @@ export class CmComponent implements MatFormFieldControl<string>,
   }
 
 
-  // Implement MatFormFieldControl<string>
-  // =====================================
+  // Implement MatFormFieldControl<string> (https://material.angular.io/components/form-field/api).
+  // ==============================================================================================
 
   @Input()
   get value(): string | null {
@@ -284,10 +290,19 @@ export class CmComponent implements MatFormFieldControl<string>,
   set disabled(value: boolean) {
     console.log(`set disabled(${value})`);
 
+    this.cm.dispatch({
+      effects: this.cmEnabled.reconfigure(EditorView.editable.of(!value))
+    })
+
     this._disabled = coerceBooleanProperty(value);
+    // const t: Transaction = this.cm.state.update();
+
+
+    // const editable: Extension = this.cmEnabled.of(EditorView.editable.of(!this.disabled)
+
     // TODO: disable codemirror view
     // Facet that provides additional DOM attributes for the editor's editable DOM element.
-    const e: Extension = EditorView.contentAttributes.of({ contenteditable: "true" });
+    // const e: Extension = EditorView.editable.of({ contenteditable: "true" });
     // const transaction: Transaction = this.cm.state.update();
 
     this.stateChanges.next();
@@ -356,8 +371,6 @@ export class CmComponent implements MatFormFieldControl<string>,
     // TODO: give the editor focus
     console.log(`onContainerClick(${event})`);
   }
-
-
 }
 
 

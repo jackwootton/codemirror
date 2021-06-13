@@ -31,4 +31,11 @@ export class AppComponent {
       editor: [{ value: this.doc, disabled: true }]
     });
   }
+
+  disable() {
+    this.form.controls["editor"].disable();
+  }
+  enable() {
+    this.form.controls["editor"].enable();
+  }
 }
