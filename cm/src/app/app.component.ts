@@ -35,7 +35,12 @@ export class AppComponent {
   disable() {
     this.form.controls["editor"].disable();
   }
+
   enable() {
     this.form.controls["editor"].enable();
+  }
+
+  logValue() {
+    console.log(this.form.controls["editor"].value);
   }
 }
