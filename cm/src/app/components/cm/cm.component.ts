@@ -1,13 +1,13 @@
-import { FocusMonitor } from '@angular/cdk/a11y';
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, forwardRef, HostBinding, Input, OnDestroy, Optional, Self, ViewChild } from '@angular/core';
+import { FocusMonitor, FocusOrigin } from '@angular/cdk/a11y';
+import { coerceBooleanProperty } from '@angular/cdk/coercion';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, forwardRef, HostBinding, Input, OnDestroy, Optional, Self } from '@angular/core';
 import { ControlValueAccessor, NgControl } from '@angular/forms';
 import { MatFormFieldControl } from '@angular/material/form-field';
 import { basicSetup, EditorState } from "@codemirror/basic-setup";
 import { json } from "@codemirror/lang-json";
+import { Extension, Transaction } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
-import { Transaction, Extension } from "@codemirror/state";
 import { Subject } from 'rxjs';
-import { coerceBooleanProperty } from '@angular/cdk/coercion';
 
 
 @Component({
@@ -18,7 +18,7 @@ import { coerceBooleanProperty } from '@angular/cdk/coercion';
     {
       provide: MatFormFieldControl,
       useExisting: forwardRef(() => CmComponent),
-      multi: true,
+      // multi: true,
     },
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -49,6 +49,19 @@ export class CmComponent implements MatFormFieldControl<string>,
       // Setting the value accessor directly to avoid a circular import.
       this.ngControl.valueAccessor = this;
     }
+
+    this.fm.monitor(this.er.nativeElement, true).subscribe(
+      (origin: FocusOrigin) => {
+        console.log(origin);
+        // origin is "touch", "mouse", "keyboard", "program", or null.
+        // It is null when it loses focus.
+        if (this.focused && !origin) {
+          this._onTouched();
+        }
+        // If there is no origin (i.e. null) the control is not focused.
+        this.focused = !!origin;
+        this.stateChanges.next();
+      });
   }
 
 
@@ -60,10 +73,8 @@ export class CmComponent implements MatFormFieldControl<string>,
    * this component's view.
    */
   ngAfterViewInit(): void {
-    const isEditable = !this.disabled;
-    console.log(isEditable);
     const darkTheme = EditorView.theme({}, { dark: false });
-    const editable: Extension = EditorView.editable.of(isEditable);
+    const editable: Extension = EditorView.editable.of(!this.disabled);
     // const contentEditable: Extension = EditorView.contentAttributes.of({ contenteditable: String(isEditable) });
     console.log(editable);
 
@@ -88,6 +99,7 @@ export class CmComponent implements MatFormFieldControl<string>,
    */
   ngOnDestroy() {
     this.stateChanges.complete();
+    this.fm.stopMonitoring(this.er);
   }
 
 
@@ -100,17 +112,57 @@ export class CmComponent implements MatFormFieldControl<string>,
    * requested.
    * @param value The new value for the element.
    */
-  writeValue(obj: any): void {
-    this.value = obj;
+  writeValue(value: any): void {
+    console.log(`writeValue(${value})`);
+    this.value = value;
   }
 
-  registerOnChange(fn: any): void {
+  /**
+  * Registers a callback function that is called when the control's value
+  * changes in the UI.
+  * @param fn The callback function to register
+  */
+  registerOnChange(fn: (_: any) => void): void {
     // Store the provided function as an internal method.
-    // this._onChange = fn;
+    this._onChange = fn;
   }
 
+
+  /**
+  * Registers a callback function is called by the forms API on initialization
+  * to update the form model on blur.
+  * @param fn The callback function to register
+  */
   registerOnTouched(fn: any): void {
-    // throw new Error('Method not implemented.');
+    // Store the provided function as an internal method.
+    this._onTouched = fn;
+  }
+
+  /**
+ * Function that is called by the forms API when the control status changes to
+ * or from 'DISABLED'.
+ * @param value The disabled status to set on the element
+ */
+  setDisabledState(value: boolean): void {
+    console.log(`setDisabledState(${value})`);
+    this.disabled = value;
+  }
+
+  /**
+   * The callback function to register on UI change.
+   * @param _ 
+   */
+  private _onChange(_: string): any {
+    console.warn(`_onChange not implemented`);
+  }
+
+
+  /**
+   * The method set in registerOnTouched. It is just a placeholder method.
+   * Use it to emit changes back to the form.
+   */
+  private _onTouched(): any {
+    console.warn(`_onTouched not implemented`);
   }
 
 
@@ -119,8 +171,7 @@ export class CmComponent implements MatFormFieldControl<string>,
 
   @Input()
   get value(): string | null {
-    console.log(`set required(${this._value})`);
-
+    console.log(`set value(${this._value})`);
     return this.cm.state.doc.toString();
   }
   set value(value: string | null) {
@@ -133,8 +184,8 @@ export class CmComponent implements MatFormFieldControl<string>,
         insert: value || "",
       },
     });
-
     this.cm.dispatch(transaction);
+
     this._value = value;
     this.stateChanges.next();
   }
@@ -142,7 +193,8 @@ export class CmComponent implements MatFormFieldControl<string>,
 
   stateChanges: Subject<void> = new Subject<void>();
   id: string = `codemirror-${CmComponent.nextId++}`;
-  
+
+
   /** The placeholder for this control. */
   @Input()
   get placeholder(): string {
@@ -157,6 +209,7 @@ export class CmComponent implements MatFormFieldControl<string>,
     this.stateChanges.next();
   }
   private _placeholder: string = '';
+
 
   /** Whether the control is focused. */
   @Input()
@@ -173,6 +226,7 @@ export class CmComponent implements MatFormFieldControl<string>,
   }
   private _focused: boolean = false;
 
+
   /** Whether the control is empty. */
   @Input()
   get empty(): boolean {
@@ -187,6 +241,7 @@ export class CmComponent implements MatFormFieldControl<string>,
     this.stateChanges.next();
   }
   private _empty: boolean = false;
+
 
   /** Whether the `MatFormField` label should try to float. */
   @Input()
@@ -217,6 +272,7 @@ export class CmComponent implements MatFormFieldControl<string>,
     this.stateChanges.next();
   }
   private _required = false;
+
 
   /** Whether the control is disabled. */
   @Input()
@@ -254,6 +310,7 @@ export class CmComponent implements MatFormFieldControl<string>,
   }
   private _errorState: boolean = false;
 
+
   /**
    * An optional name for the control type that can be used to distinguish
    * `mat-form-field` elements based on their control type. The form field will
@@ -281,6 +338,7 @@ export class CmComponent implements MatFormFieldControl<string>,
   userAriaDescribedBy?: string | undefined;
   // ngControl: NgControl | null;
 
+
   // Used by the <mat-form-field> to specify the IDs that should be used for
   // the aria-describedby attribute.
   @HostBinding('attr.aria-describedby') describedBy = '';
@@ -288,14 +346,18 @@ export class CmComponent implements MatFormFieldControl<string>,
     this.describedBy = ids.join(' ');
   }
 
+
   /**
   * This method will be called when the form field is clicked on.
   * It allows the component to hook in and handle that click however it wants. 
   * @param _event 
   */
   onContainerClick(event: MouseEvent): void {
-    console.log('Method not implemented.');
+    // TODO: give the editor focus
+    console.log(`onContainerClick(${event})`);
   }
+
+
 }
 
 
