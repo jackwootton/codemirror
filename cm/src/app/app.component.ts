@@ -1,14 +1,13 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+  styleUrls: ['./app.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent {
-
-  form: FormGroup;
 
   private doc: string = JSON.stringify({
     'checked': false,
@@ -25,9 +24,11 @@ export class AppComponent {
     ],
   }, null, 4);
 
-  constructor(private readonly fb: FormBuilder,) {
+  form: FormGroup;
+
+  constructor(private readonly fb: FormBuilder) {
     this.form = this.fb.group({
-      editor: [this.doc]
+      editor: [{ value: this.doc, disabled: true }]
     });
   }
 }

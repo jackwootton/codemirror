@@ -1,11 +1,13 @@
 import { FocusMonitor } from '@angular/cdk/a11y';
-import { AfterViewInit, Component, ElementRef, forwardRef, HostBinding, Input, OnDestroy, Optional, Self, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, forwardRef, HostBinding, Input, OnDestroy, Optional, Self, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NgControl } from '@angular/forms';
 import { MatFormFieldControl } from '@angular/material/form-field';
 import { basicSetup, EditorState } from "@codemirror/basic-setup";
 import { json } from "@codemirror/lang-json";
 import { EditorView } from "@codemirror/view";
+import { Transaction, Extension } from "@codemirror/state";
 import { Subject } from 'rxjs';
+import { coerceBooleanProperty } from '@angular/cdk/coercion';
 
 
 @Component({
@@ -19,6 +21,7 @@ import { Subject } from 'rxjs';
       multi: true,
     },
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CmComponent implements MatFormFieldControl<string>,
   ControlValueAccessor, AfterViewInit, OnDestroy {
@@ -57,13 +60,24 @@ export class CmComponent implements MatFormFieldControl<string>,
    * this component's view.
    */
   ngAfterViewInit(): void {
-    let darkTheme = EditorView.theme({}, { dark: false });
+    const isEditable = !this.disabled;
+    console.log(isEditable);
+    const darkTheme = EditorView.theme({}, { dark: false });
+    const editable: Extension = EditorView.editable.of(isEditable);
+    // const contentEditable: Extension = EditorView.contentAttributes.of({ contenteditable: String(isEditable) });
+    console.log(editable);
+
     this.cm = new EditorView({
       parent: this.er.nativeElement,
       state: EditorState.create(
         {
           doc: this._value || "",
-          extensions: [basicSetup, json(), darkTheme],
+          extensions: [
+            basicSetup,
+            darkTheme,
+            editable,
+            json(),
+          ],
         }),
     });
     console.log(this.cm);
@@ -105,10 +119,14 @@ export class CmComponent implements MatFormFieldControl<string>,
 
   @Input()
   get value(): string | null {
+    console.log(`set required(${this._value})`);
+
     return this.cm.state.doc.toString();
   }
   set value(value: string | null) {
-    const transaction = this.cm.state.update({
+    console.log(`set value(${value})`);
+
+    const transaction: Transaction = this.cm.state.update({
       changes: {
         from: 0,
         to: this.cm.state.doc.length,
@@ -128,9 +146,13 @@ export class CmComponent implements MatFormFieldControl<string>,
   /** The placeholder for this control. */
   @Input()
   get placeholder(): string {
+    console.log(`get placeholder() -> ${this._placeholder}`);
+
     return this._placeholder;
   }
   set placeholder(value: string) {
+    console.log(`set placeholder(${value})`);
+
     this._placeholder = value;
     this.stateChanges.next();
   }
@@ -139,9 +161,13 @@ export class CmComponent implements MatFormFieldControl<string>,
   /** Whether the control is focused. */
   @Input()
   get focused(): boolean {
+    console.log(`get focused() -> ${this._focused}`);
+
     return this._focused;
   }
   set focused(value: boolean) {
+    console.log(`set focused(${value})`);
+
     this._focused = coerceBooleanProperty(value);
     this.stateChanges.next();
   }
@@ -150,9 +176,13 @@ export class CmComponent implements MatFormFieldControl<string>,
   /** Whether the control is empty. */
   @Input()
   get empty(): boolean {
+    console.log(`get empty() -> ${this._empty}`);
+
     return this._empty;
   }
   set empty(value: boolean) {
+    console.log(`set empty(${value})`);
+
     this._empty = coerceBooleanProperty(value);
     this.stateChanges.next();
   }
@@ -161,9 +191,13 @@ export class CmComponent implements MatFormFieldControl<string>,
   /** Whether the `MatFormField` label should try to float. */
   @Input()
   get shouldLabelFloat(): boolean {
+    console.log(`get shouldLabelFloat() -> ${this._shouldLabelFloat}`);
+
     return this._required;
   }
   set shouldLabelFloat(value: boolean) {
+    console.log(`set shouldLabelFloat(${value})`);
+
     this._required = coerceBooleanProperty(value);
     this.stateChanges.next();
   }
@@ -172,9 +206,13 @@ export class CmComponent implements MatFormFieldControl<string>,
   /** Whether the control is required. */
   @Input()
   get required(): boolean {
+    console.log(`set required(${this._required})`);
+
     return this._required;
   }
   set required(value: boolean) {
+    console.log(`set required(${value})`);
+
     this._required = coerceBooleanProperty(value);
     this.stateChanges.next();
   }
@@ -183,11 +221,19 @@ export class CmComponent implements MatFormFieldControl<string>,
   /** Whether the control is disabled. */
   @Input()
   get disabled(): boolean {
+    console.log(`get disabled() -> ${this._disabled}`);
+
     return this._disabled;
   }
   set disabled(value: boolean) {
+    console.log(`set disabled(${value})`);
+
     this._disabled = coerceBooleanProperty(value);
     // TODO: disable codemirror view
+    // Facet that provides additional DOM attributes for the editor's editable DOM element.
+    const e: Extension = EditorView.contentAttributes.of({ contenteditable: "true" });
+    // const transaction: Transaction = this.cm.state.update();
+
     this.stateChanges.next();
   }
   private _disabled = false;
@@ -195,9 +241,13 @@ export class CmComponent implements MatFormFieldControl<string>,
 
   /** Whether the control is in an error state. */
   get errorState(): boolean {
+    console.log(`get errorState() -> ${this._disabled}`);
+
     return this.ngControl.errors !== null;
   }
   set errorState(value: boolean) {
+    console.log(`set errorState(${value})`);
+
     // this._errorState = coerceBooleanProperty(value);
     this._errorState = this.ngControl.errors !== null;
     this.stateChanges.next();
@@ -216,9 +266,13 @@ export class CmComponent implements MatFormFieldControl<string>,
    * present on the control it is assumed to be false.
    */
   get autofilled(): boolean {
+    console.log(`get autofilled() -> ${this._disabled}`);
+
     return this._autofilled;
   }
   set autofilled(value: boolean) {
+    console.log(`set autofilled(${value})`);
+
     this._autofilled = coerceBooleanProperty(value);
     this.stateChanges.next();
   }
@@ -240,10 +294,8 @@ export class CmComponent implements MatFormFieldControl<string>,
   * @param _event 
   */
   onContainerClick(event: MouseEvent): void {
-    throw new Error('Method not implemented.');
+    console.log('Method not implemented.');
   }
 }
-function coerceBooleanProperty(value: boolean): boolean {
-  throw new Error('Function not implemented.');
-}
+
 
