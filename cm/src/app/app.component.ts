@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
+import { CmComponent } from './components/cm/cm.component';
 
 @Component({
   selector: 'app-root',
@@ -28,7 +29,11 @@ export class AppComponent {
 
   constructor(private readonly fb: FormBuilder) {
     this.form = this.fb.group({
-      editor: [{ value: this.doc, disabled: true }]
+      editor: [
+        {
+          value: CmComponent.toText(this.doc),
+          disabled: true,
+        }]
     });
   }
 

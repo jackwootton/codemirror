@@ -5,8 +5,8 @@ import { ControlValueAccessor, NgControl } from '@angular/forms';
 import { MatFormFieldControl } from '@angular/material/form-field';
 import { basicSetup, EditorState } from "@codemirror/basic-setup";
 import { json } from "@codemirror/lang-json";
-import { Compartment, Extension, Transaction, Text } from "@codemirror/state";
-import { EditorView, ViewUpdate,  } from "@codemirror/view";
+import { Compartment, Extension, Text, Transaction } from "@codemirror/state";
+import { EditorView, ViewUpdate } from "@codemirror/view";
 import { Subject } from 'rxjs';
 
 
@@ -28,6 +28,9 @@ export class CmComponent implements MatFormFieldControl<Text>,
 
   // The element to append the editor to upon creation.
   @ViewChild('host', { static: false }) host?: ElementRef;
+
+  // Helper method for clients.
+  static toText = (s: string) => Text.of([s]);
 
   // Used when generating the element ID for this control.
   static nextId = 0;
@@ -78,11 +81,13 @@ export class CmComponent implements MatFormFieldControl<Text>,
    * this component's view.
    */
   ngAfterViewInit(): void {
+
     const darkTheme = EditorView.theme({}, { dark: false });
+
     const editable: Extension = this.cmEnabled.of(EditorView.editable.of(!this.disabled));
+
     const changeHandler: Extension = EditorView.updateListener.of((v: ViewUpdate) => {
       if (v.docChanged) {
-        // TODO: does quite a lot of string concatenation, is there a better way?
         this._onChange(this.cm.state.doc);
       }
     });
@@ -91,7 +96,7 @@ export class CmComponent implements MatFormFieldControl<Text>,
       parent: this.host?.nativeElement,
       state: EditorState.create(
         {
-          doc: this._value || "",
+          doc: this._value,
           extensions: [
             basicSetup,
             darkTheme,
@@ -125,7 +130,7 @@ export class CmComponent implements MatFormFieldControl<Text>,
     console.log(`writeValue(${obj})`);
     this.value = obj;
   }
-  
+
   /**
    * Registers a callback function that is called when the control's value
    * changes in the UI.
@@ -182,7 +187,6 @@ export class CmComponent implements MatFormFieldControl<Text>,
   @Input()
   get value(): Text {
     console.log(`get value(${this._value})`);
-    console.log(this.cm);
     // for giant documents it’s going to do quite a lot of string concatenation
     // so depending on your use case you might not want to constantly do it when you can avoid it
     return this.cm.state.doc;
@@ -194,17 +198,14 @@ export class CmComponent implements MatFormFieldControl<Text>,
       changes: {
         from: 0,
         to: this.cm.state.doc.length,
-        insert: value.toString(),
+        insert: value,
       },
     });
     this.cm.dispatch(transaction);
     this._value = value;
     this.stateChanges.next();
   }
-  _value: Text = Text.empty;
-
-  stateChanges: Subject<void> = new Subject<void>();
-  id: string = `codemirror-${CmComponent.nextId++}`;
+  private _value: Text = Text.empty;
 
 
   /** The placeholder for this control. */
@@ -307,13 +308,6 @@ export class CmComponent implements MatFormFieldControl<Text>,
 
 
   /**
-   * An optional name for the control type that can be used to distinguish
-   * `mat-form-field` elements based on their control type. The form field will
-   * add a class, `mat-form-field-type-{{controlType}}` to its root element.
-   */
-  controlType: string = 'codemirror';
-
-  /**
    * Whether the input is currently in an autofilled state. If property is not
    * present on the control it is assumed to be false.
    */
@@ -327,9 +321,6 @@ export class CmComponent implements MatFormFieldControl<Text>,
     this.stateChanges.next();
   }
   private _autofilled: boolean = false;
-
-  userAriaDescribedBy?: string | undefined;
-  // ngControl: NgControl | null;
 
 
   // Used by the <mat-form-field> to specify the IDs that should be used for
@@ -349,6 +340,33 @@ export class CmComponent implements MatFormFieldControl<Text>,
     // TODO: give the editor focus
     console.log(`onContainerClick(${event})`);
   }
+
+  /**
+   * 
+   */
+  stateChanges: Subject<void> = new Subject<void>();
+
+  /**
+   * 
+   */
+  id: string = `codemirror-${CmComponent.nextId++}`;
+
+  /**
+   * An optional name for the control type that can be used to distinguish
+   * `mat-form-field` elements based on their control type. The form field will
+   * add a class, `mat-form-field-type-{{controlType}}` to its root element.
+   */
+  controlType: string = 'codemirror';
+
+  /**
+   * 
+   */
+  userAriaDescribedBy?: string | undefined;
+  
+  /**
+   * 
+   */
+  // ngControl: NgControl | null;
 }
 
 
