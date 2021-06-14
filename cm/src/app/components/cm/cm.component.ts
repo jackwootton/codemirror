@@ -5,8 +5,8 @@ import { ControlValueAccessor, NgControl } from '@angular/forms';
 import { MatFormFieldControl } from '@angular/material/form-field';
 import { basicSetup, EditorState } from "@codemirror/basic-setup";
 import { json } from "@codemirror/lang-json";
-import { Compartment, Extension, Transaction } from "@codemirror/state";
-import { EditorView } from "@codemirror/view";
+import { Compartment, Extension, Transaction, Text } from "@codemirror/state";
+import { EditorView, ViewUpdate,  } from "@codemirror/view";
 import { Subject } from 'rxjs';
 
 
@@ -23,7 +23,7 @@ import { Subject } from 'rxjs';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CmComponent implements MatFormFieldControl<string>,
+export class CmComponent implements MatFormFieldControl<Text>,
   ControlValueAccessor, AfterViewInit, OnDestroy {
 
   // The element to append the editor to upon creation.
@@ -80,6 +80,12 @@ export class CmComponent implements MatFormFieldControl<string>,
   ngAfterViewInit(): void {
     const darkTheme = EditorView.theme({}, { dark: false });
     const editable: Extension = this.cmEnabled.of(EditorView.editable.of(!this.disabled));
+    const changeHandler: Extension = EditorView.updateListener.of((v: ViewUpdate) => {
+      if (v.docChanged) {
+        // TODO: does quite a lot of string concatenation, is there a better way?
+        this._onChange(this.cm.state.doc);
+      }
+    });
 
     this.cm = new EditorView({
       parent: this.host?.nativeElement,
@@ -90,6 +96,7 @@ export class CmComponent implements MatFormFieldControl<string>,
             basicSetup,
             darkTheme,
             editable,
+            changeHandler,
             json(),
           ],
         }),
@@ -118,13 +125,14 @@ export class CmComponent implements MatFormFieldControl<string>,
     console.log(`writeValue(${obj})`);
     this.value = obj;
   }
-
+  
   /**
    * Registers a callback function that is called when the control's value
    * changes in the UI.
    * @param fn The callback function to register
    */
   registerOnChange(fn: any): void {
+    console.log(`registerOnChange(${fn})`);
     // Store the provided function as an internal method.
     this._onChange = fn;
   }
@@ -136,6 +144,7 @@ export class CmComponent implements MatFormFieldControl<string>,
    * @param fn The callback function to register
    */
   registerOnTouched(fn: any): void {
+    console.log(`registerOnTouched(${fn})`);
     // Store the provided function as an internal method.
     this._onTouched = fn;
   }
@@ -154,8 +163,8 @@ export class CmComponent implements MatFormFieldControl<string>,
    * The callback function to register on UI change.
    * @param _ 
    */
-  private _onChange(_: string): any {
-    console.warn(`_onChange not implemented`);
+  private _onChange(value: Text): any {
+    console.log(`_onChange(${value})`);
   }
 
   /**
@@ -171,28 +180,28 @@ export class CmComponent implements MatFormFieldControl<string>,
   // ==============================================================================================
 
   @Input()
-  get value(): string | null {
+  get value(): Text {
     console.log(`get value(${this._value})`);
     console.log(this.cm);
     // for giant documents it’s going to do quite a lot of string concatenation
     // so depending on your use case you might not want to constantly do it when you can avoid it
-    return this.cm.state.doc.toString();
+    return this.cm.state.doc;
   }
-  set value(value: string | null) {
+  set value(value: Text) {
     console.log(`set value(${value})`);
 
     const transaction: Transaction = this.cm.state.update({
       changes: {
         from: 0,
         to: this.cm.state.doc.length,
-        insert: value || "",
+        insert: value.toString(),
       },
     });
     this.cm.dispatch(transaction);
     this._value = value;
     this.stateChanges.next();
   }
-  _value: string | null = "";
+  _value: Text = Text.empty;
 
   stateChanges: Subject<void> = new Subject<void>();
   id: string = `codemirror-${CmComponent.nextId++}`;
