@@ -2,9 +2,9 @@
 
 <main [formGroup]="form" fxLayout="column" fxLayoutGap="16px">
 
-  <mat-form-field fxFlex>
+  <div fxFlex>
     <app-cm autofocus formControlName="editor" matInput fxFlex></app-cm>
-  </mat-form-field>
+  </div>
 
   <div fxFlex fxLayout="row" fxLayoutGap="16px">
     <button fxFlex="120px" mat-button color="primary" (click)="enable()">enable</button>

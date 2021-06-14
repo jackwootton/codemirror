@@ -96,7 +96,9 @@ export class CmComponent implements MatFormFieldControl<Text>,
       parent: this.host?.nativeElement,
       state: EditorState.create(
         {
-          doc: this._value,
+          // TODO: toString() needed to avoid newline characters
+          // see https://discuss.codemirror.net/t/controlvalueaccessor-string-concatenation/3274/6
+          doc: this._value.toString(),
           extensions: [
             basicSetup,
             darkTheme,
@@ -362,7 +364,7 @@ export class CmComponent implements MatFormFieldControl<Text>,
    * 
    */
   userAriaDescribedBy?: string | undefined;
-  
+
   /**
    * 
    */
